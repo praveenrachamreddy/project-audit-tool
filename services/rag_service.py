@@ -32,18 +32,11 @@ class RAGService:
         )
         
         # 2. Vector Store (connecting to Milvus via LangChain)
-        # self.vector_store = Milvus(
-        #     embedding_function=self.embedding_model,
-        #     connection_args={"host": os.getenv("MILVUS_HOST", "milvus-grpc-praveen.apps.ocp4.imss.work"), "port": os.getenv("MILVUS_PORT", "443"), "secure": False},
-        #     collection_name="project_audit_rag_lc"
-        # )
-        
+        milvus_uri = f"http://{os.getenv('MILVUS_HOST')}:{os.getenv('MILVUS_PORT')}"
         self.vector_store = Milvus(
             embedding_function=self.embedding_model,
             connection_args={
-                "uri": "https://milvus-grpc-praveen.apps.ocp4.imss.work:443",
-                "secure": True,
-                "ca_pem_path": "C:\\Users\\praveenkumar.reddy\\Praveen_personal\\Praveen_personal\\Python\\gemini\\project-audit-tool\\project_audit_tool\\openshift\\ca.pem"
+                "uri": milvus_uri,
             },
             collection_name="project_audit_rag_lc"
         )
