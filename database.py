@@ -3,8 +3,9 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
+import os
 
-DATABASE_URL = "sqlite:///project_audit_tool.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///project_audit_tool.db")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

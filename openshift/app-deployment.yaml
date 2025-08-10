@@ -15,9 +15,9 @@ metadata:
   name: project-audit-config
   namespace: praveen
 data:
-  MILVUS_HOST: ""
+  MILVUS_HOST: "milvus-service.praveen.svc.cluster.local"
   MILVUS_PORT: "19530"
-  DATABASE_URL: "sqlite:///project_audit_tool.db"
+  DATABASE_URL: "sqlite:////app/data/project_audit_tool.db"
   STREAMLIT_SERVER_PORT: "8501"
   STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
 ---
@@ -44,7 +44,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: project-audit-tool
-        image: your-registry/project-audit-tool:latest
+        image: image-registry.openshift-image-registry.svc:5000/praveen/project-audit-tool:latest
         ports:
         - containerPort: 8501
           protocol: TCP

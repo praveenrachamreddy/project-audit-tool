@@ -1,0 +1,30 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: project-audit-tool
+  labels:
+    build: project-audit-tool
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/praveenrachamreddy/project-audit-tool.git'
+      ref: 'main'
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: project-audit-tool:latest
+  triggers:
+  - type: GitHub
+    github:
+      secret: Ep2L_JX6ozKU2lWkYFjC
+  - type: Generic
+    generic:
+      secret: eOstLm75aA3_jLa0qmG1
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
