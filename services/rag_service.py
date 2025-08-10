@@ -32,12 +32,14 @@ class RAGService:
         )
         
         # 2. Vector Store (connecting to Milvus via LangChain)
-        milvus_uri = f"tcp://{os.getenv('MILVUS_HOST')}:{os.getenv('MILVUS_PORT')}"
+        milvus_host = os.getenv("MILVUS_HOST", "milvus-service.praveen.svc.cluster.local")
+        milvus_port = os.getenv("MILVUS_PORT", "19530")
+
         self.vector_store = Milvus(
             embedding_function=self.embedding_model,
             connection_args={
-                "uri": milvus_uri,
-                "_async": False 
+                "host": milvus_host,
+                "port": milvus_port
             },
             collection_name="project_audit_rag_lc"
         )
