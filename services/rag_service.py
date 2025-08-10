@@ -4,6 +4,7 @@ import os
 from database import SessionLocal, Project, Document, Risk, Control, Compliance
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_qdrant import Qdrant
+from qdrant_client import QdrantClient
 from langchain_core.documents import Document as LangchainDocument
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -35,9 +36,13 @@ class RAGService:
 
         # 2. Vector Store (connecting to Qdrant via LangChain)
         qdrant_url = f"http://{os.getenv('QDRANT_HOST')}:{os.getenv('QDRANT_PORT')}"
+        
+        # Initialize Qdrant client
+        qdrant_client_instance = QdrantClient(url=qdrant_url)
+
         self.vector_store = Qdrant(
             embedding_function=self.embedding_model,
-            url=qdrant_url,
+            client=qdrant_client_instance, # Pass the client instance
             collection_name="project_audit_rag_qdrant",
         )
 
