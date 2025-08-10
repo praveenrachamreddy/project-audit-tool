@@ -1,0 +1,62 @@
+# openshift/docling-deployment.yaml
+# This file defines a placeholder deployment for the "Docling" service.
+# It uses a standard Nginx image as a stand-in. You can replace the
+# image with your actual Docling service image when it's ready.
+#
+# To apply this configuration:
+# oc apply -f openshift/docling-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docling-placeholder-deployment
+  labels:
+    app: docling-placeholder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docling-placeholder
+  template:
+    metadata:
+      labels:
+        app: docling-placeholder
+    spec:
+      containers:
+        - name: docling-placeholder
+          # IMPORTANT: Replace this with your actual Docling service image
+          image: nginx:latest 
+          ports:
+            - containerPort: 80
+              name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docling-service
+spec:
+  selector:
+    app: docling-placeholder
+  ports:
+    - name: http
+      port: 8080 # The service will be exposed on this port internally
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: docling-route
+  labels:
+    app: docling-placeholder
+spec:
+  to:
+    kind: Service
+    name: docling-service
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

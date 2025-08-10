@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environments
+venv/
+venv_broken/
+
+# Secrets
+.env
+
+# Database
+project_audit_tool.db

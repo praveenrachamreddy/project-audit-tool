@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: attu
+  namespace: praveen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: attu
+  template:
+    metadata:
+      labels:
+        app: attu
+    spec:
+      containers:
+        - name: attu
+          image: zilliz/attu:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MILVUS_URL
+              value: "milvus:19530"   # Service name & port in your cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: attu
+  namespace: praveen
+spec:
+  selector:
+    app: attu
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: attu
+  namespace: praveen
+spec:
+  to:
+    kind: Service
+    name: attu
+  port:
+    targetPort: 80
+  tls:
+    termination: edge

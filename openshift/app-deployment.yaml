@@ -1,0 +1,186 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: project-audit-secrets
+  namespace: praveen
+type: Opaque
+stringData:
+  GEMINI_API_KEY: "AIzaSyB4QdhTt82kvtlbGlwcG6BgUzoBTsHrvI4"
+  MILVUS_USER: ""
+  MILVUS_PASSWORD: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project-audit-config
+  namespace: praveen
+data:
+  MILVUS_HOST: ""
+  MILVUS_PORT: "19530"
+  DATABASE_URL: "sqlite:///project_audit_tool.db"
+  STREAMLIT_SERVER_PORT: "8501"
+  STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-audit-tool
+  namespace: praveen
+  labels:
+    app: project-audit-tool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-audit-tool
+  template:
+    metadata:
+      labels:
+        app: project-audit-tool
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: project-audit-tool
+        image: your-registry/project-audit-tool:latest
+        ports:
+        - containerPort: 8501
+          protocol: TCP
+        env:
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: project-audit-secrets
+              key: GEMINI_API_KEY
+        - name: MILVUS_USER
+          valueFrom:
+            secretKeyRef:
+              name: project-audit-secrets
+              key: MILVUS_USER
+        - name: MILVUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: project-audit-secrets
+              key: MILVUS_PASSWORD
+        - name: MILVUS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: project-audit-config
+              key: MILVUS_HOST
+        - name: MILVUS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: project-audit-config
+              key: MILVUS_PORT
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: project-audit-config
+              key: DATABASE_URL
+        - name: STREAMLIT_SERVER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: project-audit-config
+              key: STREAMLIT_SERVER_PORT
+        - name: STREAMLIT_SERVER_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: project-audit-config
+              key: STREAMLIT_SERVER_ADDRESS
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: document-storage
+          mountPath: /app/documents_storage
+        - name: data-storage
+          mountPath: /app/data
+      volumes:
+      - name: document-storage
+        persistentVolumeClaim:
+          claimName: project-audit-documents-pvc
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: project-audit-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: project-audit-service
+  namespace: praveen
+  labels:
+    app: project-audit-tool
+spec:
+  selector:
+    app: project-audit-tool
+  ports:
+  - name: http
+    port: 8501
+    targetPort: 8501
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: project-audit-route
+  namespace: praveen
+  labels:
+    app: project-audit-tool
+spec:
+  to:
+    kind: Service
+    name: project-audit-service
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: project-audit-documents-pvc
+  namespace: praveen
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: gp2  # Adjust based on your OpenShift storage class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: project-audit-data-pvc
+  namespace: praveen
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: gp2  # Adjust based on your OpenShift storage class

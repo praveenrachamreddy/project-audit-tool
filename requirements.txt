@@ -1,0 +1,14 @@
+SQLAlchemy
+google-generativeai
+streamlit
+python-dotenv
+Werkzeug
+
+# LangChain and related dependencies for the new RAG architecture
+langchain
+langchain-google-genai
+langchain-community
+langchain-milvus
+pymilvus 
+sentence-transformers
+httpx # For potential real API calls
