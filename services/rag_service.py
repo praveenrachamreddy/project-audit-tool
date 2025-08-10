@@ -31,9 +31,7 @@ class RAGService:
             model_name=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         )
         
-        # 2. Vector Store (connecting to Milvus via LangChain)
-        milvus_host = os.getenv("MILVUS_HOST", "milvus-service.praveen.svc.cluster.local")
-        milvus_port = os.getenv("MILVUS_PORT", "19530")
+        
 
         # 2. Vector Store (connecting to Qdrant via LangChain)
         qdrant_url = f"http://{os.getenv('QDRANT_HOST')}:{os.getenv('QDRANT_PORT')}"

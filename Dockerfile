@@ -6,16 +6,17 @@ WORKDIR /app
 
 # Set environment variables
 # Note: For production, it's recommended to use OpenShift secrets to manage sensitive data like API keys.
-ENV GEMINI_API_KEY="AIzaSyCFzvpJlFbKCl-AQv4clFh0b00YiVdGlaQ"
-ENV MILVUS_HOST=milvus-grpc-praveen.apps.ocp4.imss.work
-ENV MILVUS_PORT=443
+ENV QDRANT_HOST ="qdrant-service.praveen.svc.cluster.local"                                                                                  │
+ENV QDRANT_PORT ="6333"  
+
 
 # Copy the requirements file
 COPY requirements.txt .
 
 # Install dependencies
 # Running as root to install packages
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip uninstall -y langchain-milvus pymilvus || true && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
 COPY . .
