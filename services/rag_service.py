@@ -3,7 +3,7 @@
 import os
 from database import SessionLocal, Project, Document, Risk, Control, Compliance
 from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_milvus.vectorstores import Milvus
+from langchain_qdrant import Qdrant
 from langchain_core.documents import Document as LangchainDocument
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -35,13 +35,12 @@ class RAGService:
         milvus_host = os.getenv("MILVUS_HOST", "milvus-service.praveen.svc.cluster.local")
         milvus_port = os.getenv("MILVUS_PORT", "19530")
 
-        self.vector_store = Milvus(
+        # 2. Vector Store (connecting to Qdrant via LangChain)
+        qdrant_url = f"http://{os.getenv('QDRANT_HOST')}:{os.getenv('QDRANT_PORT')}"
+        self.vector_store = Qdrant(
             embedding_function=self.embedding_model,
-            connection_args={
-                "host": milvus_host,
-                "port": milvus_port
-            },
-            collection_name="project_audit_rag_lc"
+            url=qdrant_url,
+            collection_name="project_audit_rag_qdrant",
         )
 
         # 3. LLM (using Gemini via LangChain)
@@ -162,26 +161,20 @@ class RAGService:
         }
 
     def clear_vector_store(self):
-        """Clears the entire Milvus collection."""
+        """Clears the entire Qdrant collection."""
         print("\n[RAGService] Clearing vector store collection...")
         try:
-            # This is a simplified way; a more robust way might use the Milvus SDK (pymilvus)
-            # to drop the collection if the LangChain wrapper doesn't expose a clear method.
-            # For now, we assume we can get a client and clear it.
-            collection_name = self.vector_store.collection_name
-            if self.vector_store.col:
-                 self.vector_store.col.drop() 
-                 print(f"Dropped Milvus collection: {collection_name}")
-            else:
-                 print("No active collection to drop.")
+            self.vector_store.client.delete_collection(collection_name=self.vector_store.collection_name)
+            print(f"Dropped Qdrant collection: {self.vector_store.collection_name}")
         except Exception as e:
             print(f"Could not clear collection (it may not exist yet): {e}")
 
     def get_vector_store_summary(self) -> str:
         """Gets a summary of the vector store's state."""
         try:
-            count = self.vector_store.col.num_entities if self.vector_store.col else 0
-            summary = f"Milvus collection '{self.vector_store.collection_name}' currently has {count} items."
+            count_result = self.vector_store.client.count(collection_name=self.vector_store.collection_name, exact=True)
+            count = count_result.count
+            summary = f"Qdrant collection '{self.vector_store.collection_name}' currently has {count} items."
             return summary
         except Exception as e:
-            return f"Could not retrieve summary from Milvus: {e}"
+            return f"Could not retrieve summary from Qdrant: {e}"

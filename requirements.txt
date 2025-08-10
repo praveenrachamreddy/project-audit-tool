@@ -8,7 +8,7 @@ Werkzeug
 langchain
 langchain-google-genai
 langchain-community
-langchain-milvus
-pymilvus 
+qdrant-client
+langchain-qdrant
 sentence-transformers
 httpx # For potential real API calls
