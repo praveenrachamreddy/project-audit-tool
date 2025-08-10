@@ -37,6 +37,7 @@ class RAGService:
             embedding_function=self.embedding_model,
             connection_args={
                 "uri": milvus_uri,
+                "_async": False
             },
             collection_name="project_audit_rag_lc"
         )
