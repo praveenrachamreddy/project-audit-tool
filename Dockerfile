@@ -23,11 +23,11 @@ COPY . .
 # Expose the port that Streamlit runs on
 EXPOSE 8501
 
-# # Create a non-root user and set permissions for OpenShift
-# # This is a security best practice and often required by cluster policies.
-# RUN groupadd -r -g 1001 default && \
-#     useradd -u 1001 -r -g default -d /app -s /sbin/nologin -c "Default User" default && \
-#     chown -R 1001:1001 /app
+# Create a non-root user and set permissions for OpenShift
+# This is a security best practice and often required by cluster policies.
+RUN groupadd -r -g 1001 default && \
+    useradd -u 1001 -r -g default -d /app -s /sbin/nologin -c "Default User" default && \
+    chown -R 1001:1001 /app
 
 # Switch to the non-root user to run the application
 USER 1001
