@@ -32,7 +32,7 @@ class RAGService:
         )
         
         # 2. Vector Store (connecting to Milvus via LangChain)
-        milvus_uri = f"http://{os.getenv('MILVUS_HOST')}:{os.getenv('MILVUS_PORT')}"
+        milvus_uri = f"{os.getenv('MILVUS_HOST')}:{os.getenv('MILVUS_PORT')}"
         self.vector_store = Milvus(
             embedding_function=self.embedding_model,
             connection_args={
