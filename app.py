@@ -262,14 +262,14 @@ def delete_document_cmd(args):
 def generate_document_cmd(args):
     """Generates a document using the LLM."""
     llm_service = LLMService()
-    document = llm_service.generate_document(args.prompt)
+    document = llm_service.generate_document(args.prompt, args.project_id)
     print("\nGenerated Document:\n")
     print(document)
 
 def assess_risk_cmd(args):
     """Assesses a risk using the LLM."""
     llm_service = LLMService()
-    assessment = llm_service.assess_risk(args.risk_description)
+    assessment = llm_service.assess_risk(args.risk_description, args.project_id)
     print("\nRisk Assessment:\n")
     print(assessment)
 
@@ -468,10 +468,12 @@ def main():
     # LLM Integration Commands
     generate_document_parser = subparsers.add_parser("generate-document", help="Generates a document using the LLM.")
     generate_document_parser.add_argument("prompt", help="The prompt for document generation.")
+    generate_document_parser.add_argument("--project-id", type=int, help="The ID of the project to use for context.", required=False)
     generate_document_parser.set_defaults(func=generate_document_cmd)
 
     assess_risk_parser = subparsers.add_parser("assess-risk", help="Assesses a risk using the LLM.")
     assess_risk_parser.add_argument("risk_description", help="The description of the risk to assess.")
+    assess_risk_parser.add_argument("--project-id", type=int, help="The ID of the project to use for context.", required=False)
     assess_risk_parser.set_defaults(func=assess_risk_cmd)
 
     list_llm_models_parser = subparsers.add_parser("list-llm-models", help="Lists available LLM models.")

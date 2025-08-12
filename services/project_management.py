@@ -3,7 +3,6 @@ from services.audit_logging import create_audit_log
 from services.risk_management import get_risks
 from services.compliance_management import get_compliance_items
 from services.document_management import get_documents
-from services.llm_service import LLMService
 import datetime
 
 def create_project(name, description, pin_id=None, scope=None, milestones=None, start_date=None, end_date=None, effort_estimation=None, deliverables=None, team_members=None, team_size=None, roles_responsibilities=None, sdlc_model=None, ciso_approved=False, ciso_approval_date=None):
@@ -98,6 +97,7 @@ def generate_project_status_report(project_id: int) -> str:
     Generates a comprehensive status report for a given project using LLM.
     The report includes project details, work packages, risks, compliance items, and documents.
     """
+    from services.llm_service import LLMService
     db = SessionLocal()
     llm_service = LLMService()
     report_content = []

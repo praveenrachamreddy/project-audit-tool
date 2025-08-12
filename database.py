@@ -1,15 +1,30 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Date
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Date, Enum
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 import os
+import enum
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///project_audit_tool.db")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+class ProjectRole(enum.Enum):
+    Admin = "Admin"
+    Editor = "Editor"
+    Viewer = "Viewer"
+
+class UserProjectRole(Base):
+    __tablename__ = 'user_project_roles'
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    project_id = Column(Integer, ForeignKey('projects.id'), primary_key=True)
+    role = Column(Enum(ProjectRole), nullable=False)
+
+    user = relationship("User", back_populates="projects")
+    project = relationship("Project", back_populates="users")
 
 class Project(Base):
     __tablename__ = "projects"
@@ -33,7 +48,7 @@ class Project(Base):
     ciso_approved = Column(Boolean, default=False)
     ciso_approval_date = Column(Date, nullable=True)
 
-    # Relationships defined after all classes
+    users = relationship("UserProjectRole", back_populates="project")
 
 class WorkPackage(Base):
     __tablename__ = "work_packages"
@@ -99,7 +114,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
-    role = Column(String, default="user") # e.g., admin, user
+
+    projects = relationship("UserProjectRole", back_populates="user")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -131,6 +147,22 @@ Project.compliance_items = relationship("Compliance", back_populates="project")
 Project.documents = relationship("Document", back_populates="project")
 Risk.controls = relationship("Control", back_populates="risk")
 
+def assign_admin_to_orphan_projects():
+    """Assigns the default admin user to any projects that have no users."""
+    db = SessionLocal()
+    admin_user = db.query(User).filter_by(username="admin").first()
+    if not admin_user:
+        return # No admin user to assign
+
+    projects = db.query(Project).all()
+    for project in projects:
+        if not project.users:
+            admin_role = UserProjectRole(user_id=admin_user.id, project_id=project.id, role=ProjectRole.Admin)
+            db.add(admin_role)
+            print(f"Assigned admin user to orphan project: {project.name}")
+    db.commit()
+    db.close()
+
 def init_db():
     """Initializes the database and creates the tables."""
     Base.metadata.create_all(bind=engine)
@@ -138,12 +170,15 @@ def init_db():
     # Create a default admin user if one doesn't exist
     session = SessionLocal()
     if not session.query(User).filter_by(username="admin").first():
-        admin_user = User(username="admin", role="admin")
+        admin_user = User(username="admin")
         admin_user.set_password("admin") # Default password is 'admin'
         session.add(admin_user)
         session.commit()
-        session.close()
         print("Default admin user created (username: admin, password: admin)")
+    session.close()
+    
+    # Assign admin to any projects that don't have a user
+    assign_admin_to_orphan_projects()
 
 if __name__ == "__main__":
     init_db()

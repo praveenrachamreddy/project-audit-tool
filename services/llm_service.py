@@ -3,6 +3,9 @@
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+from services.project_management import get_project_by_id, get_work_packages
+from services.risk_management import get_risks
+from services.document_management import get_documents
 
 class LLMService:
     def __init__(self):
@@ -11,21 +14,80 @@ class LLMService:
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set.")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('models/gemini-2.5-pro') # Using the specified model
+        self.model = genai.GenerativeModel('models/gemini-2.5-pro') # Using a standard model
 
-    def generate_document(self, prompt):
-        """Generates a document based on the given prompt."""
+    def _get_project_context(self, project_id):
+        """Helper function to gather context for a given project."""
+        project = get_project_by_id(project_id)
+        if not project:
+            return ""
+
+        work_packages = get_work_packages(project_id)
+        risks = get_risks(project_id)
+        documents = get_documents(project_id)
+
+        context = f"""Project Name: {project.name}
+Project Description: {project.description}
+
+Work Packages:
+"""
+        for wp in work_packages:
+            context += f"- {wp.subject}\n"
+        
+        context += "\nRisks:\n"
+        for risk in risks:
+            context += f"- {risk.name} (Severity: {risk.severity}, Likelihood: {risk.likelihood}, Status: {risk.status})\n"
+
+        context += "\nDocuments:\n"
+        for doc in documents:
+            context += f"- {doc.name} (Type: {doc.type}, Status: {doc.approval_status})\n"
+        
+        return context
+
+    def generate_document(self, prompt, project_id=None):
+        """Generates a document based on the given prompt, with optional project context."""
+        final_prompt = prompt
+        if project_id:
+            context = self._get_project_context(project_id)
+            final_prompt = f"""You are a project management assistant. Based on the following project context, generate the requested document.
+
+**Project Context:**
+---
+{context}
+---
+
+**User's Request:**
+{prompt}
+
+**Generated Document:**
+"""
         try:
-            response = self.model.generate_content(prompt)
+            response = self.model.generate_content(final_prompt)
             return response.text
         except Exception as e:
             return f"Error generating document: {e}"
 
-    def assess_risk(self, risk_description):
-        """Assesses a risk based on its description."""
-        prompt = f"""Assess the following risk and provide a severity and likelihood rating (e.g., Severity: High, Likelihood: Medium). Also, provide a brief justification.
+    def assess_risk(self, risk_description, project_id=None):
+        """Assesses a risk based on its description, with optional project context."""
+        context_prompt = ""
+        if project_id:
+            context = self._get_project_context(project_id)
+            context_prompt = f"""
+**Project Context:**
+---
+{context}
+---
+"""
 
-Risk: {risk_description}"""
+        prompt = f"""You are a risk assessment expert. Assess the following risk and provide a severity and likelihood rating (e.g., Severity: High, Likelihood: Medium). Also, provide a brief justification.
+
+{context_prompt}
+
+**Risk to Assess:**
+{risk_description}
+
+**Assessment:**
+"""
         try:
             response = self.model.generate_content(prompt)
             return response.text

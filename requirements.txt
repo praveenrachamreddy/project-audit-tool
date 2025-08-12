@@ -4,11 +4,3 @@ streamlit
 python-dotenv
 Werkzeug
 
-# LangChain and related dependencies for the new RAG architecture
-langchain
-langchain-google-genai
-langchain-community
-qdrant-client
-langchain-qdrant
-sentence-transformers
-httpx # For potential real API calls
